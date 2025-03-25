@@ -2,23 +2,25 @@ package main
 
 import "strings"
 
+type GenContext struct{}
+
 // Generators can be any "trigger" in the source code
 // that results in code being generated.
 type Generator interface {
-	gen() string
+	gen(GenContext) string
 }
 
 // A directive is an instruction found in the source code
 // outlining how Generators are created.
 type Directive interface {
-	apply(any) string
+	apply(GenContext, any) string
 }
 
 type AttributeDirective struct {
 	Attributes []Attribute
 }
 
-func (d AttributeDirective) apply(u any) string {
+func (d AttributeDirective) apply(ctx GenContext, u any) string {
 	switch u.(type) {
 	case Enum:
 		// TODO: ...
@@ -37,7 +39,7 @@ type DeriveAttribute struct {
 	TraitNames []string // TODO: change to TraitName
 }
 
-func (d DeriveAttribute) apply(u any) string {
+func (d DeriveAttribute) apply(ctx GenContext, u any) string {
 	switch u.(type) {
 	case Enum:
 		// TODO: ...
@@ -60,10 +62,10 @@ type WithDirectives[T any] struct {
 	Directives []Directive
 }
 
-func (g WithDirectives[T]) gen() string {
+func (g WithDirectives[T]) gen(ctx GenContext) string {
 	builder := strings.Builder{}
 	for _, d := range g.Directives {
-		builder.WriteString(d.apply(g.Value))
+		builder.WriteString(d.apply(ctx, g.Value))
 	}
 	return builder.String()
 }

@@ -10,7 +10,7 @@ type Enum struct {
 	Variants []EnumVariant
 }
 
-func (g Enum) gen() string {
+func (g Enum) gen(GenContext) string {
 	return ""
 }
 
@@ -19,6 +19,6 @@ type Struct struct {
 	Fields map[string]string
 }
 
-func (g Struct) gen() string {
+func (g Struct) gen(GenContext) string {
 	return ""
 }

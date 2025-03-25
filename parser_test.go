@@ -24,6 +24,18 @@ func TestParseCommentDirectives(t *testing.T) {
 				)
 			`,
 		},
+		{
+			source: `
+				// #[derive(Clone, Variants)]
+				type Bar = string
+
+				const (
+					BarOne Bar = "one"
+					BarTwo Bar = "two"
+					BarThree Bar = "three"
+				)
+			`,
+		},
 	}
 
 	for _, test := range tests {
@@ -32,7 +44,7 @@ func TestParseCommentDirectives(t *testing.T) {
 
 		gen, ok := p.Match()
 		assert.True(t, ok)
-		assert.Equal(t, "---enum---", gen.gen())
+		assert.Equal(t, "---enum---", gen.gen(GenContext{}))
 
 		ewd, ok := gen.(EnumWithDirectives)
 		assert.True(t, ok)
