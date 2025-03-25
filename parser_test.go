@@ -14,7 +14,7 @@ func TestParseCommentDirectives(t *testing.T) {
 	tests := []Test{
 		{
 			source: `
-				//#[derive(Variants)]
+				// #[derive(Variants)]
 				type Bar string
 
 				const (
@@ -34,6 +34,29 @@ func TestParseCommentDirectives(t *testing.T) {
 					BarTwo Bar = "two"
 					BarThree Bar = "three"
 				)
+			`,
+		},
+		{
+			source: `
+				// #[derive(Variants)]
+				enum DmgType {
+					BLUNT
+					SLASH
+					PIERCE
+					FIRE
+					WATER
+					EARTH
+					WIND
+					ICE
+					GRASS
+					ELECTRIC
+					ARCANE
+					BLOOD
+					POISON
+					CORROSIVE
+					LIGHT
+					DARK
+				}
 			`,
 		},
 	}

@@ -57,7 +57,7 @@ func _parseCommentDirective(p *Parser[Generator]) (Generator, bool) {
 func _parseEnum(p *Parser[Generator]) (Generator, bool) {
 	fns := []LookupFunc[Generator]{
 		_parseGoEnum,
-		// _parsePrismaEnum, // TODO
+		_parsePrismaEnum,
 	}
 
 	startingPos := p.GetPos()
@@ -144,7 +144,37 @@ func _parseGoEnum(p *Parser[Generator]) (Generator, bool) {
 }
 
 func _parsePrismaEnum(p *Parser[Generator]) (Generator, bool) {
-	panic("TODO")
+	startingPos := p.GetPos()
+
+	if p.Advance().Kind != ENUM {
+		return p.Reset(startingPos)
+	}
+
+	enum := Enum{
+		Name:     p.CurrentToken().Value,
+		Variants: []EnumVariant{},
+	}
+
+	if p.Advance().Kind != IDENTIFIER {
+		return p.Reset(startingPos)
+	}
+	if p.Advance().Kind != OPEN_CURLY {
+		return p.Reset(startingPos)
+	}
+
+	for p.CurrentTokenKind() == IDENTIFIER {
+		variantName := p.Advance().Value
+		enum.Variants = append(enum.Variants, EnumVariant{
+			Key:   variantName,
+			Value: variantName,
+		})
+	}
+
+	if p.CurrentTokenKind() != CLOSE_CURLY {
+		return p.Reset(startingPos)
+	}
+
+	return enum, true
 }
 
 func parseDirective(p *Parser[Directive]) (Directive, bool) {
