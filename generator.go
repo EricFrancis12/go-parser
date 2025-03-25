@@ -87,3 +87,11 @@ type EnumWithDirectives = WithDirectives[Enum]
 // // #[derive(Variants)]
 // type Foo struct {}
 type StructWithDirectives = WithDirectives[Struct]
+
+func genAll(ctx GenContext, gens ...Generator) string {
+	var builder strings.Builder
+	for _, g := range gens {
+		builder.WriteString(g.gen(ctx))
+	}
+	return builder.String()
+}

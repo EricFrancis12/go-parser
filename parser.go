@@ -73,6 +73,17 @@ func (p *Parser[T]) AdvanceN(n int) Token {
 	return tk
 }
 
+func (p *Parser[T]) AdvanceTo(kinds ...TokenKind) (int, bool) {
+	i := 0
+	for _, kind := range kinds {
+		i++
+		if p.Advance().Kind != kind {
+			return i, false
+		}
+	}
+	return i, true
+}
+
 func (p *Parser[T]) hasTokens() bool {
 	return p.pos < len(p.tokens) && p.CurrentTokenKind() != EOF
 }

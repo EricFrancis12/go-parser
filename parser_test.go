@@ -17,6 +17,14 @@ func TestParseCommentDirectives(t *testing.T) {
 				// #[derive(Variants)]
 				type Bar string
 
+				const BarOne Bar = "one"
+			`,
+		},
+		{
+			source: `
+				// #[derive(Variants)]
+				type Bar string
+
 				const (
 					BarOne Bar = "one"
 					BarTwo Bar = "two"

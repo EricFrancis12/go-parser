@@ -82,7 +82,6 @@ func _parseGoEnum(p *Parser[Generator]) (Generator, bool) {
 	enum := Enum{
 		Name:     p.CurrentToken().Value,
 		Variants: []EnumVariant{},
-		// Decorator: decorator.Value,
 	}
 
 	if p.Advance().Kind != IDENTIFIER {
@@ -95,16 +94,14 @@ func _parseGoEnum(p *Parser[Generator]) (Generator, bool) {
 	if p.Advance().Kind != CONST {
 		return p.Reset(startingPos)
 	}
-
 	if p.CurrentTokenKind() == OPEN_PAREN {
 		p.Advance()
 	}
 
 	for p.CurrentTokenKind() == IDENTIFIER {
 		enumVariant := EnumVariant{
-			Key: p.CurrentToken().Value,
+			Key: p.Advance().Value,
 		}
-		p.Advance()
 
 		if p.CurrentTokenKind() != IDENTIFIER || p.Advance().Value != enum.Name {
 			return p.Reset(startingPos)
@@ -114,30 +111,26 @@ func _parseGoEnum(p *Parser[Generator]) (Generator, bool) {
 			return p.Reset(startingPos)
 		}
 
-		if p.CurrentTokenKind() == IOTA {
+		if p.Advance().Kind == IOTA {
 			enumVariant.Value = "0"
 			enum.Variants = append(enum.Variants, enumVariant)
 
-			p.Advance()
-
-			i := 1
-			for p.CurrentTokenKind() == IDENTIFIER {
+			for i := 1; p.CurrentTokenKind() == IDENTIFIER; i++ {
 				enum.Variants = append(enum.Variants, EnumVariant{
 					Key:   p.Advance().Value,
 					Value: fmt.Sprintf("%d", i),
 				})
-				i++
 			}
 
 			break
 		}
 
-		enumVariant.Value = p.Advance().Value
+		enumVariant.Value = p.CurrentToken().Value
 		enum.Variants = append(enum.Variants, enumVariant)
 	}
 
-	if p.Advance().Kind != CLOSE_PAREN {
-		return p.Reset(startingPos)
+	if p.CurrentTokenKind() != CLOSE_PAREN {
+		p.Advance()
 	}
 
 	return enum, true
@@ -155,10 +148,7 @@ func _parsePrismaEnum(p *Parser[Generator]) (Generator, bool) {
 		Variants: []EnumVariant{},
 	}
 
-	if p.Advance().Kind != IDENTIFIER {
-		return p.Reset(startingPos)
-	}
-	if p.Advance().Kind != OPEN_CURLY {
+	if _, ok := p.AdvanceTo(IDENTIFIER, OPEN_CURLY); !ok {
 		return p.Reset(startingPos)
 	}
 
