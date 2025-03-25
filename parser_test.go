@@ -91,6 +91,9 @@ func TestParseCommentDirectives(t *testing.T) {
 		assert.Equal(t, test.expected.Name, ewd.Value.Name)
 		for i, v := range test.expected.Variants {
 			assert.Equal(t, v.Key, ewd.Value.Variants[i].Key)
+			assert.Equal(t, v.Value, ewd.Value.Variants[i].Value)
 		}
+
+		assert.Equal(t, fmtEnum(test.expected, test.ctx), fmtEnum(ewd.Value, test.ctx))
 	}
 }

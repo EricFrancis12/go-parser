@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 var lookupFuncs = []LookupFunc[Generator]{
 	// The parser starts at index 0
@@ -109,9 +112,11 @@ func _parseGoEnum(p *Parser[Generator]) (Generator, bool) {
 			return p.Reset(startingPos)
 		}
 
-		if p.Advance().Kind == IOTA {
+		if p.CurrentTokenKind() == IOTA {
 			enumVariant.Value = "0"
 			enum.Variants = append(enum.Variants, enumVariant)
+
+			p.Advance()
 
 			for i := 1; p.CurrentTokenKind() == IDENTIFIER; i++ {
 				enum.Variants = append(enum.Variants, EnumVariant{
@@ -123,7 +128,7 @@ func _parseGoEnum(p *Parser[Generator]) (Generator, bool) {
 			break
 		}
 
-		enumVariant.Value = p.CurrentToken().Value
+		enumVariant.Value = strings.Trim(p.Advance().Value, `"`)
 		enum.Variants = append(enum.Variants, enumVariant)
 	}
 
