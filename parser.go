@@ -33,15 +33,29 @@ func (p *Parser[T]) Match() (T, bool) {
 	return t, false
 }
 
-func (p *Parser[T]) MustParseAll() []T {
-	result := []T{}
+func (p *Parser[T]) MustMatch() T {
+	t, ok := p.Match()
+	if !ok {
+		panic(fmt.Sprintf("expected match at pos (%d) with token %d", p.pos, p.CurrentTokenKind()))
+	}
+	return t
+}
 
+func (p *Parser[T]) MatchAll() []T {
+	result := []T{}
 	for p.Advance().Kind != EOF {
 		if gs, ok := p.Match(); ok {
 			result = append(result, gs)
 		}
 	}
+	return result
+}
 
+func (p *Parser[T]) MustMatchAll() []T {
+	result := []T{}
+	for p.Advance().Kind != EOF {
+		result = append(result, p.MustMatch())
+	}
 	return result
 }
 
@@ -50,8 +64,12 @@ func (p *Parser[T]) CurrentToken() Token {
 }
 
 func (p *Parser[T]) Advance() Token {
+	return p.AdvanceN(1)
+}
+
+func (p *Parser[T]) AdvanceN(n int) Token {
 	tk := p.CurrentToken()
-	p.pos++
+	p.pos += n
 	return tk
 }
 

@@ -2,25 +2,70 @@ package main
 
 import "strings"
 
+// Generators can be any "trigger" in the source code
+// that results in code being generated.
 type Generator interface {
-	gen(GenContext) string
+	gen() string
 }
 
-type GenContext struct {
-	Fmt string
+// A directive is an instruction found in the source code
+// outlining how Generators are created.
+type Directive interface {
+	apply(any) string
 }
 
-// example:
-//
-// // #[derive(Variants)]
-// type Foo struct {}
-type Decorated[T any] struct {
+type AttributeDirective struct {
+	Attributes []Attribute
+}
+
+func (d AttributeDirective) apply(u any) string {
+	switch u.(type) {
+	case Enum:
+		// TODO: ...
+		return "---enum---"
+	case Struct:
+		// TODO: ...
+	}
+	return ""
+}
+
+type Attribute interface {
+	// TODO: ...
+}
+
+type DeriveAttribute struct {
+	TraitNames []string // TODO: change to TraitName
+}
+
+func (d DeriveAttribute) apply(u any) string {
+	switch u.(type) {
+	case Enum:
+		// TODO: ...
+	case Struct:
+		// TODO: ...
+	}
+	return ""
+}
+
+// Trait names found inside of derive()
+type TraitName string
+
+const (
+	TraitNameClone    TraitName = "Clone"
+	TraitNameVariants TraitName = "Variants"
+)
+
+type WithDirectives[T any] struct {
 	Value      T
-	Decorators []Generator
+	Directives []Directive
 }
 
-func (g Decorated[T]) gen(ctx GenContext) string {
-	return genAll(ctx, g.Decorators...)
+func (g WithDirectives[T]) gen() string {
+	builder := strings.Builder{}
+	for _, d := range g.Directives {
+		builder.WriteString(d.apply(g.Value))
+	}
+	return builder.String()
 }
 
 // example:
@@ -29,31 +74,14 @@ func (g Decorated[T]) gen(ctx GenContext) string {
 // type Bar string
 //
 // const (
-//
 //	BarOne Bar = "one"
 //	BarTwo Bar = "two"
 //	BarThree Bar = "three"
-//
 // )
-type DecoratedEnum = Decorated[Enum]
+type EnumWithDirectives = WithDirectives[Enum]
 
-// A type of decorator that contains a list of attributes.
-// valid formats:
+// example:
 //
-// - // #[...]
-// - //#[...]
-type AttributesDecorator struct {
-	Attributes []Generator
-}
-
-func (g AttributesDecorator) gen(ctx GenContext) string {
-	return genAll(ctx, g.Attributes...)
-}
-
-func genAll(ctx GenContext, gens ...Generator) string {
-	var builder strings.Builder
-	for _, g := range gens {
-		builder.WriteString(g.gen(ctx))
-	}
-	return builder.String()
-}
+// // #[derive(Variants)]
+// type Foo struct {}
+type StructWithDirectives = WithDirectives[Struct]
