@@ -1,8 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 var lookupFuncs = []LookupFunc[Generator]{
 	// The parser starts at index 0
@@ -34,7 +32,7 @@ func _parseCommentDirective(p *Parser[Generator]) (Generator, bool) {
 	}
 
 	switch d.(type) {
-	case AttributeDirective:
+	case AttributesDirective:
 		gen, ok := p.Match()
 		if ok {
 			switch g := gen.(type) {
@@ -195,7 +193,7 @@ func parseAttributesDirective(p *Parser[Directive]) (Directive, bool) {
 		return p.Reset(startingPos)
 	}
 
-	attributes := []Attribute{}
+	attributes := []Directive{}
 
 	for p.CurrentTokenKind() != CLOSE_PAREN {
 		att, ok := parseAttribute(p)
@@ -210,7 +208,7 @@ func parseAttributesDirective(p *Parser[Directive]) (Directive, bool) {
 		attributes = append(attributes, att)
 	}
 
-	return AttributeDirective{
+	return AttributesDirective{
 		Attributes: attributes,
 	}, true
 }
@@ -223,8 +221,8 @@ func parseAttribute(p *Parser[Directive]) (Directive, bool) {
 	}
 
 	for _, fn := range fns {
-		if gen, ok := fn(p); ok {
-			return gen, true
+		if d, ok := fn(p); ok {
+			return d, true
 		}
 
 		p.SetPos(startingPos)
@@ -243,7 +241,7 @@ func parseDeriveAttribute(p *Parser[Directive]) (Directive, bool) {
 		return p.Reset(startingPos)
 	}
 
-	traitNames := []string{}
+	traitNames := []TraitName{}
 
 	for p.CurrentTokenKind() != CLOSE_PAREN {
 		tk := p.Advance()
@@ -255,7 +253,12 @@ func parseDeriveAttribute(p *Parser[Directive]) (Directive, bool) {
 			p.Advance()
 		}
 
-		traitNames = append(traitNames, tk.Value)
+		tn := TraitNameFromString(tk.Value)
+		if tn == nil {
+			panic(fmt.Sprintf("expected valid Trait, but got: %s\n", tk.Value))
+		}
+
+		traitNames = append(traitNames, *tn)
 	}
 
 	return DeriveAttribute{

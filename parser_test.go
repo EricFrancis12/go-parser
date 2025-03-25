@@ -8,64 +8,70 @@ import (
 
 func TestParseCommentDirectives(t *testing.T) {
 	type Test struct {
-		source string
+		source   string
+		ctx      GenContext
+		expected Enum
 	}
 
 	tests := []Test{
 		{
 			source: `
 				// #[derive(Variants)]
-				type Bar string
+				type Foo string
 
-				const BarOne Bar = "one"
+				const FooOne Foo = "ONE"
 			`,
+			expected: Enum{
+				Name:     "Foo",
+				Variants: []EnumVariant{{"FooOne", "ONE"}},
+			},
 		},
 		{
 			source: `
 				// #[derive(Variants)]
-				type Bar string
+				type Foo string
 
 				const (
-					BarOne Bar = "one"
-					BarTwo Bar = "two"
-					BarThree Bar = "three"
+					FooOne Foo = "ONE"
+					FooTwo Foo = "TWO"
+					FooThree Foo = "THREE"
 				)
 			`,
+			expected: Enum{
+				Name:     "Foo",
+				Variants: []EnumVariant{{"FooOne", "ONE"}, {"FooTwo", "TWO"}, {"FooThree", "THREE"}},
+			},
 		},
 		{
 			source: `
 				// #[derive(Clone, Variants)]
-				type Bar = string
+				type Foo = string
 
 				const (
-					BarOne Bar = "one"
-					BarTwo Bar = "two"
-					BarThree Bar = "three"
+					FooOne Foo = "ONE"
+					FooTwo Foo = "TWO"
+					FooThree Foo = "THREE"
 				)
 			`,
+			expected: Enum{
+				Name:     "Foo",
+				Variants: []EnumVariant{{"FooOne", "ONE"}, {"FooTwo", "TWO"}, {"FooThree", "THREE"}},
+			},
 		},
 		{
 			source: `
 				// #[derive(Variants)]
-				enum DmgType {
-					BLUNT
-					SLASH
-					PIERCE
-					FIRE
-					WATER
-					EARTH
-					WIND
-					ICE
-					GRASS
-					ELECTRIC
-					ARCANE
-					BLOOD
-					POISON
-					CORROSIVE
-					LIGHT
-					DARK
+				enum Foo {
+					ONE
+					TWO
+					THREE
 				}
 			`,
+			ctx: GenContext{Fmt: "PRISMA"},
+			expected: Enum{
+				Name:     "Foo",
+				Variants: []EnumVariant{{"ONE", "ONE"}, {"TWO", "TWO"}, {"THREE", "THREE"}},
+			},
 		},
 	}
 
@@ -75,10 +81,16 @@ func TestParseCommentDirectives(t *testing.T) {
 
 		gen, ok := p.Match()
 		assert.True(t, ok)
-		assert.Equal(t, "---enum---", gen.gen(GenContext{}))
 
 		ewd, ok := gen.(EnumWithDirectives)
 		assert.True(t, ok)
+
 		assert.Len(t, ewd.Directives, 1)
+		assert.Len(t, ewd.Value.Variants, len(test.expected.Variants))
+
+		assert.Equal(t, test.expected.Name, ewd.Value.Name)
+		for i, v := range test.expected.Variants {
+			assert.Equal(t, v.Key, ewd.Value.Variants[i].Key)
+		}
 	}
 }

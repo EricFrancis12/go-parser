@@ -1,8 +1,8 @@
 package main
 
-import "strings"
-
-type GenContext struct{}
+type GenContext struct {
+	Fmt string
+}
 
 // Generators can be any "trigger" in the source code
 // that results in code being generated.
@@ -16,37 +16,28 @@ type Directive interface {
 	apply(GenContext, any) string
 }
 
-type AttributeDirective struct {
-	Attributes []Attribute
+type AttributesDirective struct {
+	Attributes []Directive
 }
 
-func (d AttributeDirective) apply(ctx GenContext, u any) string {
-	switch u.(type) {
-	case Enum:
-		// TODO: ...
-		return "---enum---"
-	case Struct:
-		// TODO: ...
+func (d AttributesDirective) apply(ctx GenContext, u any) string {
+	s := ""
+	for _, a := range d.Attributes {
+		s += a.apply(ctx, u)
 	}
-	return ""
-}
-
-type Attribute interface {
-	// TODO: ...
+	return s
 }
 
 type DeriveAttribute struct {
-	TraitNames []string // TODO: change to TraitName
+	TraitNames []TraitName
 }
 
-func (d DeriveAttribute) apply(ctx GenContext, u any) string {
-	switch u.(type) {
-	case Enum:
-		// TODO: ...
-	case Struct:
-		// TODO: ...
+func (d DeriveAttribute) apply(ctx GenContext, unknown any) string {
+	s := ""
+	for _, tn := range d.TraitNames {
+		s += tn.apply(ctx, unknown)
 	}
-	return ""
+	return s
 }
 
 // Trait names found inside of derive()
@@ -57,17 +48,43 @@ const (
 	TraitNameVariants TraitName = "Variants"
 )
 
+func TraitNameFromString(s string) *TraitName {
+	tnVariants := []TraitName{
+		TraitNameClone,
+		TraitNameVariants,
+	}
+
+	for _, tn := range tnVariants {
+		if string(tn) == s {
+			return &tn
+		}
+	}
+
+	return nil
+}
+
+func (d TraitName) apply(ctx GenContext, unknown any) string {
+	switch d {
+	case TraitNameVariants:
+		switch u := unknown.(type) {
+		case Enum:
+			return fmtEnum(u, ctx)
+		}
+	}
+	return ""
+}
+
 type WithDirectives[T any] struct {
 	Value      T
 	Directives []Directive
 }
 
 func (g WithDirectives[T]) gen(ctx GenContext) string {
-	builder := strings.Builder{}
+	s := ""
 	for _, d := range g.Directives {
-		builder.WriteString(d.apply(ctx, g.Value))
+		s += d.apply(ctx, g.Value)
 	}
-	return builder.String()
+	return s
 }
 
 // example:
@@ -76,9 +93,11 @@ func (g WithDirectives[T]) gen(ctx GenContext) string {
 // type Bar string
 //
 // const (
+//
 //	BarOne Bar = "one"
 //	BarTwo Bar = "two"
 //	BarThree Bar = "three"
+//
 // )
 type EnumWithDirectives = WithDirectives[Enum]
 
@@ -89,9 +108,9 @@ type EnumWithDirectives = WithDirectives[Enum]
 type StructWithDirectives = WithDirectives[Struct]
 
 func genAll(ctx GenContext, gens ...Generator) string {
-	var builder strings.Builder
+	s := ""
 	for _, g := range gens {
-		builder.WriteString(g.gen(ctx))
+		s += g.gen(ctx)
 	}
-	return builder.String()
+	return s
 }
